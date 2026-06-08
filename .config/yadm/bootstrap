@@ -11,23 +11,14 @@
 # 4. Add yadm to PATH
 #    source ~/.profile
 # 5. Pull and run bootstrap (this script)
-#    yadm clone https://github.com/realgeorge/<REPO> && yadm bootstrap
+#    yadm clone --bootstrap https://github.com/triicky1/mint
 # 6. Reboot
 # 7. Select Gnome-flashback+i3 in login manager (GDM3)
 ##################################################
 
-# TODO:
-# 1. Install dependencies for neovim with LazyVim, VimTex etc.
-# 2. Setup a default .gitconfig
-# 3. Install some kind of nerd font with ligatures
-# 4. Invoke rclone-setup script (mv to $HOME/.local/bin so it can be used later)
-# 5. Configure a simple .bashrc
-# 6. Configure ghostty so that it looks decent and has a prompt
-
 # Update PATH for the current script runtime
 export PATH="$HOME/.local/bin:$PATH"
 
-# REVISE THIS: Better to use global .gitconfig ???
 function init_yadm() {
     cd "$HOME"
     yadm submodule update --recursive --init
@@ -53,21 +44,6 @@ function update_mint() {
     df -h
 }
 
-function setup_dotfiles() {
-    THIS_DIR=$(cd "$(dirname "$0")" && pwd)
-    [ -d "$HOME/.config/nvim" ] &&
-        mv -f "$HOME/.config/nvim" "$HOME/.config/nvim.bak"
-
-    [ -d "$HOME/.config/tmux" ] &&
-        mv -f "$HOME/.config/tmux" "$HOME/.config/tmux.bak"
-
-    mkdir -p $HOME/.config/nvim
-    mkdir -p $HOME/.config/tmux
-
-    cp -r "$THIS_DIR/../nvim/*" "$HOME/.config/nvim"
-    cp -r "$THIS_DIR/../tmux/*" "$HOME/.config/tmux"
-}
-
 function install_official_pkgs() {
     local pkgs=(
         python3
@@ -77,21 +53,28 @@ function install_official_pkgs() {
         python3-matplotlib # pythons matlab plot libraries
         python3-numpy
         python3-scipy
-        curl           # data transfer
-        firefox        # web browser
-        ghostty        # terminal emulator (+++ ligatures and terminal image support)
-        clangd         # LSP for c/c++ (used by coc-clangd)
-        bear           # generate compile_command.json for coc
-        acpi           # battery monitor
-        zathura        # lightweight pdf viewer
-        rclone         # setup remote vaults (Google Drive, OneDrive, Dropbox etc.)
-        vlc            # media player
-        deluge         # torrent client
-        ffmpeg         # video converter
-        openssh-server # ssh access to this computer (look into this more)
-        p7zip-full     # unzip 7z
-        neovim         # the undisputed number 1 text editor
-        docker         # for matlab # TODO: Add user to group
+        curl            # data transfer
+        firefox         # web browser
+        ghostty         # terminal emulator (+++ ligatures and terminal image support)
+        clangd          # LSP for c/c++ (used by coc-clangd)
+        bear            # generate compile_command.json for coc
+        acpi            # battery monitor
+        zathura         # lightweight pdf viewer
+        rclone          # setup remote vaults (Google Drive, OneDrive, Dropbox etc.)
+        vlc             # media player
+        deluge          # torrent client
+        ffmpeg          # video converter
+        openssh-server  # ssh access to this computer (look into this more)
+        p7zip-full      # unzip 7z
+        neovim          # the undisputed number 1 text editor
+        docker          # for matlab
+        tree-sitter-cli # dependency for lazyvim
+        libgtk-4-dev
+        libgtk4-layer-shell-dev
+        libadwaita-1-dev
+        gettext
+        libxml12-utils
+        zig
 
         # Haven't decided yet
         # nautilus # file explorer
@@ -114,30 +97,14 @@ function install_official_pkgs() {
         echo "Installed ${pkgs[@]}"
 }
 
-# Remove unused default folders and decapitalize
-function setup_home_dirs() {
-    mkdir -p $HOME/dev/thirdparty $HOME/media $HOME/tmp
-    mv $HOME/Desktop $HOME/desktop
-    mv $HOME/Documents $HOME/documents
-    mv $HOME/Downloads $HOME/downloads
-    mv $HOME/Music $HOME/media/music
-    mv $HOME/Pictures $HOME/media/pictures
-    mv $HOME/Videos $HOME/media/videos
-    rm -r $HOME/Public $HOME/Templates
+function install_ghostty() {
+    wget https://release.files.ghostty.org/1.3.1/ghostty-1.3.1.tar.gz
+    tar -xf ghostty-1.3.1.tar.gz
+    cd ghostty-1.3.1/
+    zig build -Doptimize=ReleaseFast
 }
 
-setup_ghostty() {
-    curl -fsSL https://raw.githubusercontent.com/mkasberg/ghostty-ubuntu/HEAD/install.sh
-}
-
-install_nvim_plugins() {
-    sudo apt install tree-sitter-cli # Dependency for LazyVim
-    git clone --depth 1 https://github.com/LazyVim/starter ~/.config/nvim
-    rm -rf ~/.config/nvim/.git
-    echo "Installed LazyVim"
-}
-
-install_matlab() {
+function install_matlab() {
     wget -O "$HOME/.local/bin/mpm" https://www.mathworks.com/mpm/glnxa64/mpm
     chmod +x "$HOME/.local/bin/mpm"
     mpm install \
@@ -151,6 +118,48 @@ function install_kicad() {
     sudo apt update
     sudo apt install --install_recommends kicad
     sudo sed 's/^/#/' /etc/apt/sources.list.d/kicad-ubuntu*.list
+}
+
+function _create_backup() {
+    local dir="$1" dest="$1.bak"
+    [ -d "$dir" ] && mv -f "$dir" "$dest"
+    mkdir -p "$dir"
+}
+
+function _symlink_config() {
+    local app="$1" this_dir=$(cd "$(dirname "$0")" && pwd)
+    # Copy source to dotfiles repository
+    cp -r "$this_dir/../$app" "$HOME/dotfiles/"
+    # Symlink from dotfiles to .config
+    ln -s "$HOME/dotfiles/$app" "$HOME/.config/$app"
+}
+
+function setup_dotfiles() {
+    mkdir -p "$HOME/dotfiles"
+    for app in "nvim" "tmux" "zsh" "ghostty"; do
+        _create_backup "$HOME/.config/$app"
+        _symlink_config "$app"
+    done
+    # TODO: move .gitconfig and .gitignore to dotfiles
+}
+
+function setup_antidote() {
+    {
+        echo 'export ZDOTDIR="$HOME/.config/zsh"'
+        echo '. "$ZDOTDIR/.zshenv"'
+    } >"$HOME/.zshenv"
+}
+
+# Remove unused default folders and decapitalize
+function setup_home_dirs() {
+    mkdir -p $HOME/dev/thirdparty $HOME/media $HOME/tmp
+    mv $HOME/Desktop $HOME/desktop
+    mv $HOME/Documents $HOME/documents
+    mv $HOME/Downloads $HOME/downloads
+    mv $HOME/Music $HOME/media/music
+    mv $HOME/Pictures $HOME/media/pictures
+    mv $HOME/Videos $HOME/media/videos
+    rm -r $HOME/Public $HOME/Templates
 }
 
 function prompt() {
@@ -168,11 +177,12 @@ bootstrap_mint() {
     prompt "Init yadm" "init_yadm"
     prompt "Update Mint?" "update_mint"
     prompt "Install official packages" "install_official_pkgs"
-    prompt "Setup home folders" "setup_home_dirs"
-    prompt "Setup ghostty" "setup_ghostty"
-    prompt "Install nvim plugins" "install_nvim_plugins" # TODO:
+    prompt "Install ghostty" "install_ghostty"
     prompt "Install matlab" "install_matlab"
     prompt "Install kicat" "install_kicad"
+    prompt "Setup dotfiles" "setup_dotfiles"
+    prompt "Setup home folders" "setup_home_dirs"
+    prompt "Setup zsh/antidote" "setup_antidote"
     echo "######### WIZARD COMPLETED ###########"
 
     echo "NOTE: If you ran from virtual box, make sure you shutdown"
