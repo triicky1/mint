@@ -1,0 +1,181 @@
+#!/usr/bin/env bash
+
+##################################################
+# NOTE: Built for Linux Mint
+#
+# Installation (automate this later)
+# 1. sudo apt install git curl
+# 2. mkdir -p $HOME/.local/bin
+# 3. Pull latest yadm
+#    wget -O "HOME/.local/bin/yadm" https://raw.githubusercontent.com/yadm-dev/yadm/master/yadm && chmod a+x "$HOME/.local/bin/yadm"
+# 4. Add yadm to PATH
+#    source ~/.profile
+# 5. Pull and run bootstrap (this script)
+#    yadm clone https://github.com/realgeorge/<REPO> && yadm bootstrap
+# 6. Reboot
+# 7. Select Gnome-flashback+i3 in login manager (GDM3)
+##################################################
+
+# TODO:
+# 1. Install dependencies for neovim with LazyVim, VimTex etc.
+# 2. Setup a default .gitconfig
+# 3. Install some kind of nerd font with ligatures
+# 4. Invoke rclone-setup script (mv to $HOME/.local/bin so it can be used later)
+# 5. Configure a simple .bashrc
+# 6. Configure ghostty so that it looks decent and has a prompt
+
+# Update PATH for the current script runtime
+export PATH="$HOME/.local/bin:$PATH"
+
+# REVISE THIS: Better to use global .gitconfig ???
+function init_yadm() {
+    cd "$HOME"
+    yadm submodule update --recursive --init
+    # Hiding the README and LICENSE file
+    # Reference: https://github.com/TheLocehiliosan/yadm/issues/93
+    yadm gitconfig core.sparseCheckout true
+    yadm sparse-checkout set '/*' '!README.md' '!UNLICENSE.md'
+
+    # I prefer not having a default global git config
+    read -p "yadm username[Firstname Lastname]: " name
+    yadm gitconfig user.name "$name"
+    read -p "yadm email[email@email.com]: " email
+    yadm gitconfig user.email "$email"
+    echo "Can be changed later using yadm gitconfig..."
+}
+
+function update_mint() {
+    sudo apt update -y
+    sudo apt upgrade -y
+
+    echo "Packages installed: $(sudo apt list --installed | wc -l)"
+    echo "Disk space: "
+    df -h
+}
+
+function setup_dotfiles() {
+    THIS_DIR=$(cd "$(dirname "$0")" && pwd)
+    [ -d "$HOME/.config/nvim" ] &&
+        mv -f "$HOME/.config/nvim" "$HOME/.config/nvim.bak"
+
+    [ -d "$HOME/.config/tmux" ] &&
+        mv -f "$HOME/.config/tmux" "$HOME/.config/tmux.bak"
+
+    mkdir -p $HOME/.config/nvim
+    mkdir -p $HOME/.config/tmux
+
+    cp -r "$THIS_DIR/../nvim/*" "$HOME/.config/nvim"
+    cp -r "$THIS_DIR/../tmux/*" "$HOME/.config/tmux"
+}
+
+function install_official_pkgs() {
+    local pkgs=(
+        python3
+        python3-pip        # python package manager
+        python3-devel      # python developer libraries
+        python3-virtualenv # python virutal environments
+        python3-matplotlib # pythons matlab plot libraries
+        python3-numpy
+        python3-scipy
+        curl           # data transfer
+        firefox        # web browser
+        ghostty        # terminal emulator (+++ ligatures and terminal image support)
+        clangd         # LSP for c/c++ (used by coc-clangd)
+        bear           # generate compile_command.json for coc
+        acpi           # battery monitor
+        zathura        # lightweight pdf viewer
+        rclone         # setup remote vaults (Google Drive, OneDrive, Dropbox etc.)
+        vlc            # media player
+        deluge         # torrent client
+        ffmpeg         # video converter
+        openssh-server # ssh access to this computer (look into this more)
+        p7zip-full     # unzip 7z
+        neovim         # the undisputed number 1 text editor
+        docker         # for matlab # TODO: Add user to group
+
+        # Haven't decided yet
+        # nautilus # file explorer
+
+        # Things that seem useful, but needs research:
+        # xcwd # get current folder (used for launching terminal)
+        # i3 (tiling window manager) related:
+        #   fonts-font-awesome # Icons (for larger icons in i3blocks)
+        #   gnome-flashback # gnome-session (to use gnome apps with i3)
+        #   sysstat # used to show cpu usage i3blocks
+        # Misc.
+        #   zenity # custom pop-up
+        #   picocom # terminal emulator (for serial port)
+        #   sxiv # image viewer
+        #   flameshot # screenshot tool
+        #   imagemagick # resize images
+    )
+
+    sudo apt install "${pkgs[@]}" -y &&
+        echo "Installed ${pkgs[@]}"
+}
+
+# Remove unused default folders and decapitalize
+function setup_home_dirs() {
+    mkdir -p $HOME/dev/thirdparty $HOME/media $HOME/tmp
+    mv $HOME/Desktop $HOME/desktop
+    mv $HOME/Documents $HOME/documents
+    mv $HOME/Downloads $HOME/downloads
+    mv $HOME/Music $HOME/media/music
+    mv $HOME/Pictures $HOME/media/pictures
+    mv $HOME/Videos $HOME/media/videos
+    rm -r $HOME/Public $HOME/Templates
+}
+
+setup_ghostty() {
+    curl -fsSL https://raw.githubusercontent.com/mkasberg/ghostty-ubuntu/HEAD/install.sh
+}
+
+install_nvim_plugins() {
+    sudo apt install tree-sitter-cli # Dependency for LazyVim
+    git clone --depth 1 https://github.com/LazyVim/starter ~/.config/nvim
+    rm -rf ~/.config/nvim/.git
+    echo "Installed LazyVim"
+}
+
+install_matlab() {
+    wget -O "$HOME/.local/bin/mpm" https://www.mathworks.com/mpm/glnxa64/mpm
+    chmod +x "$HOME/.local/bin/mpm"
+    mpm install \
+        --release=R2025b \
+        --destination=$HOME/.local/share/MATLAB/R2025b \
+        --products MATLAB Simulink
+}
+
+function install_kicad() {
+    sudo add-apt-repository ppa:kicad/kicad-6.0.11-releases
+    sudo apt update
+    sudo apt install --install_recommends kicad
+    sudo sed 's/^/#/' /etc/apt/sources.list.d/kicad-ubuntu*.list
+}
+
+function prompt() {
+    local question_text="$1"
+    local func_name="$2"
+    read -p "$question_text [y/n]: " usr_input
+    if [ "$usr_input" == "y" ]; then
+        eval "$func_name"
+    fi
+}
+
+# REVISE THIS LATER
+bootstrap_mint() {
+    echo "######### Installation wizard ###########"
+    prompt "Init yadm" "init_yadm"
+    prompt "Update Mint?" "update_mint"
+    prompt "Install official packages" "install_official_pkgs"
+    prompt "Setup home folders" "setup_home_dirs"
+    prompt "Setup ghostty" "setup_ghostty"
+    prompt "Install nvim plugins" "install_nvim_plugins" # TODO:
+    prompt "Install matlab" "install_matlab"
+    prompt "Install kicat" "install_kicad"
+    echo "######### WIZARD COMPLETED ###########"
+
+    echo "NOTE: If you ran from virtual box, make sure you shutdown"
+    echo "virtual box completely (not just reboot from commandline) afterwards"
+    exit 0
+}
