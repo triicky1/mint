@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+echo "What remote do you want to set up?"
+echo "1) OneDrive Chalmers"
+echo "2) OneDrive Private"
+
+read -p $'What kind of remote do you want to configure\n1/2> ' usr_input
+
+case "$usr_input" in
+    1)
+        REMOTE_NAME="OneDrive"
+        ;;
+    2)
+        REMOTE_NAME="OneDrivePersonal"
+        ;;
+    *)
+        echo "Invalid input."
+        exit 1
+        ;;
+esac
+
+# Creates the remote and initiates the web authentication
+rclone config create "$REMOTE_NAME" onedrive config_is_local true

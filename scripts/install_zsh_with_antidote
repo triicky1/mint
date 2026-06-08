@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+if [ -e "$HOME/.zshenv" ]; then
+    mv "$HOME/.zshenv" "$HOME/.zshenv.bak"
+fi
+
+cat <<EOF > "$HOME/.zshenv"
+export ZDOTDIR="$HOME/.config/zsh"
+. "\$ZDOTDIR/.zshenv"
+EOF
