@@ -1,0 +1,59 @@
+[user]
+    name =      ; Full name
+    email =     ; Go to 'github.com/settings/email' and use the single verified email associated with your GitHub account
+    username =  ; Github username
+[core]
+    editor = nvim
+    whitespace = fix,-indent-with-non-tab,trailing-space,cr-at-eol
+    # Syntax-highlighting pager for git, diff, etc. https://github.com/dandavison/delta
+    # Dependencies: git-delta (package)
+    pager = delta
+[branch]
+    sort = -committerdate
+[tag]
+    sort = version:refname
+[init]
+    defaultBranch = main
+# QoL but should only be enabled if you understand how branches work in depth.
+; [checkout]
+;     defaultRemote = origin
+# QoL but should only be enabled if you understand how rebasing and merging conflicts work.
+; [rerere]
+;     enabled = 1
+;     autoUpdate = 1
+[diff]
+    algorithm = histogram
+    colorMoved = plain
+    renames = true
+    tool = nvimdiff
+# Kinda QoL but could also be really annoying if used incorrectly, so keep disabled for now.
+# Running `git difftool` on a commit with 50 changed files, will force you to open/close Neovim 50 times.
+; [difftool]
+;     prompt = false # opens the diff tool immediately without asking for confirmation.
+[push]
+    # Example: Create branch e.g. `feature`. Run `git push`. Git executes `git push -u origin feature`
+    autoSetupRemote = true
+    # Example: Run `git tag -a -v1.0 -m "Release"`. Run `git push`. Both the commits and tags are pushed.
+    followTags = true
+[fetch]
+    prune = true
+    pruneTags = true
+    all = true
+[rebase]
+    # Used with `git rebase -i`
+    autoSquash = true # organizes commits prefixed with fixup! or squash! pairing them with their target commits.
+    updateRefs = true # updates local branches that depend on a branch being rebased.
+[merge]
+    conflictStyle = zdiff3
+[interactive]
+    diffFilter = delta --color-only
+[delta]
+    navigate = true # use n and N to move between different sections
+    dark = true
+    line-numbers = true
+    side-by-side = true # side by side diff view
+    features = decorations
+[delta "decorations"]
+    line-numbers-right-format = "{np:^4}│ "
+[alias]
+    lg = log --oneline --graph --decorate --all

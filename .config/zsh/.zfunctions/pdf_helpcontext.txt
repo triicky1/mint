@@ -1,0 +1,13 @@
+Usage: pdf [options] <command> [args...]
+
+Options:
+-h, --help         Show this help
+-v, --verbose      Display extra info
+-q, --query        Search query (format: YYYYMM or YYMM)
+-d, --debug        Debug mode (show internals, disable limit)
+-r, --recents      List recent files
+
+Commands:
+pdf <filename.pdf>
+pdf -q <query>
+pdf open <number>
