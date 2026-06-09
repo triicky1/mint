@@ -1,7 +1,5 @@
 #!/bin/zsh
-#
 # .aliases - Set whatever shell aliases you want.
-#
 
 # Changing/making/removing directory
 setopt auto_cd
@@ -43,7 +41,6 @@ compdef _dirs d
 
 # mask built-ins with better defaults
 alias vim=nvim
-alias vi=nvim
 
 # more ways to ls
 alias ll='ls -lh'
@@ -55,35 +52,16 @@ alias ldot='ls -ld .*'
 alias quit='exit'
 alias cd..='cd ..'
 
-# tar
-alias tarls="tar -tvf"
-alias untar="tar -xf"
-
 # find
-alias fd='find . -type d -name'
-alias ff='find . -type f -name'
-
-# url encode/decode
-alias urldecode='python3 -c "import sys, urllib.parse as ul; \
-    print(ul.unquote_plus(sys.argv[1]))"'
-alias urlencode='python3 -c "import sys, urllib.parse as ul; \
-    print (ul.quote_plus(sys.argv[1]))"'
+alias fd='find . -type d -name' # find directory
+alias ff='find . -type f -name' # find file
 
 # misc
 alias z="exec zsh"
-alias dots="cd ~/dotfiles"
-alias please=sudo
+alias zdot='cd ${ZDOTDIR:-~}'
 alias zshrc='${EDITOR:vim} "${ZDOTDIR:-$HOME}"/.zshrc'
 alias zbench='for i in {1..10}; do /usr/bin/time zsh -lic exit; done'
-alias zdot='cd ${ZDOTDIR:-~}'
-alias print_color_range='for i in {0..255}; do print -Pn "%K{$i}  %k%F{$i} ${(l:3::0:)i} %f "; (( (i + 1) % 8 == 0 )) && print ""; done'
-alias temp="nvim ~/temp/scratch -n -c 'setlocal buftype=nofile bufhidden=hide noswapfile'"
-alias convert="python3 ~/dotfiles/scripts/calc/convert.py"
+alias dots="cd ~/dotfiles"
 alias scripts="cd ~/.config/scripts" 
 
-alias dnfman='if [ -f "$XDG_CONFIG_HOME/scripts/dnfman4dummies.sh" ]; then zsh $XDG_CONFIG_HOME/scripts/dnfman4dummies.sh; fi'
-alias dnfhelp=dnfman
-
-alias info='info --vi-keys'
-alias hwmonitor='watch -n 1 sensors'
-
+alias print_color_range='for i in {0..255}; do print -Pn "%K{$i}  %k%F{$i} ${(l:3::0:)i} %f "; (( (i + 1) % 8 == 0 )) && print ""; done'

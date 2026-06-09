@@ -1,12 +1,49 @@
+#!/usr/bin/env zsh
+# extract_courses.zsh
+
+# INFO: You need to structure your Chalmers OneDrive directory as follows:
+# ~/OneDrive ❯ ls
+# Permissions Name
+# drwxr-xr-x    TKAUT-1
+# drwxr-xr-x    TKAUT-2
+# drwxr-xr-x    TKAUT-3
+# ~OneDrive/TKAUT-2 ❯ ls
+# Permissions Name
+# drwxr-xr-x    DAT525-Data-structures-and-algorithms
+# drwxr-xr-x    EDA488-Maskinorienterad-programmering
+# drwxr-xr-x    IMS085-Simulering-och-optimering-av-hållbara-produktionssystem
+# drwxr-xr-x    MVE091-Mathematical-statistics
+# drwxr-xr-x    SSY044-Signals-and-systems
+# drwxr-xr-x    SSY052-Reglerteknik
+# drwxr-xr-x    TEK815-Economy-and-organistaion
+
+# Usage:
+
+# Usage: calc_academic_year <start_year> [repeated_years]
+# Returns: current_year - start_year - repeated_years
+calc_academic_year() {
+    local start_year=${1:?did you forget to specify your starting year?}
+    local repeated_years=${2:-0} # optional
+    local this_year=$(date +%Y)
+
+    local month=$(date +%m)
+
+    if [ "$month" -gt 8 ]; then
+        echo $(( this_year - start_year - repeated_years + 1))
+    else
+        echo $(( this_year - start_year - repeated_years ))
+    fi
+
+}
+
 # Function to automatically create navigation aliases for courses
 create_course_aliases() {
-  
     # Variables
-    local current_year=2
+    local current_year=$(calc_academic_year 2024)
     local print_year="TKAUT-$current_year" # Adjust which courses are displayed on startup
     local course_aliases="$ZDOTDIR/.zshrc.d/auto_generated/course_aliases.zsh"  # Alias storage file
     local course_list="$ZDOTDIR/.zshrc.d/auto_generated/course_list.txt" # Aliases text help file
-    
+
     # Ensure paths exist
     mkdir -p "$ZDOTDIR/.zshrc.d/auto_generated"
     [[ ! -e "$course_aliases" ]] && touch "$course_aliases"
@@ -19,7 +56,7 @@ create_course_aliases() {
     echo "# Auto-generated course aliases" > "$course_aliases"
     echo "# Courses:" > "$course_list"
     echo "alias skola='cd \"$HOME/OneDrive/$print_year\"'" >> "$course_aliases"
-    
+
     # Process each year (active + archive)
     for ((year=1; year<=$current_year; year++)); do
         local active_dir="$HOME/OneDrive/TKAUT-$year"
@@ -47,7 +84,7 @@ create_course_aliases() {
                 if [[ "$code" =~ ^[A-Z]{3}[0-9]{3}$ ]]; then
                     local alias_name="${code:l}"  # Lowercase (mve601)
                     local display_alias="${(U)code}"  # Uppercase for printing
-                    
+
                     # Create alias
                     alias "$alias_name"="cd \"$dir\""
                     alias "${alias_name:u}"="cd \"$dir\"" # Also allow uppercase input
